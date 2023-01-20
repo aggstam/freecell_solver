@@ -895,6 +895,7 @@ int main(int argc, char** argv) {
     t1 = clock();
 
     initialize_search(puzzle, tops, method);
+    // TODO: fix algo
     solution_node = search(method); // The main call.
 
     t2 = clock();
