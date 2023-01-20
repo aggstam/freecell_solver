@@ -133,7 +133,7 @@ void display_puzzle(struct tree_node* node) {
 // Output:
 //        0 --> The new frontier node has been added successfully.
 //        -1 --> Memory problem when inserting the new frontier node.
-int add_frontier_front(struct tree_node* node){
+int add_frontier_front(struct tree_node* node) {
     // Creating the new frontier node.
     struct frontier_node* new_frontier_node = (struct frontier_node*) malloc(sizeof(struct frontier_node));
     if (new_frontier_node == NULL) {
@@ -144,7 +144,7 @@ int add_frontier_front(struct tree_node* node){
     new_frontier_node->previous = NULL;
     new_frontier_node->next = frontier_head;
 
-    if (frontier_head == NULL){
+    if (frontier_head == NULL) {
         frontier_head = new_frontier_node;
         frontier_tail = new_frontier_node;
         return 0;
@@ -163,7 +163,7 @@ int add_frontier_front(struct tree_node* node){
 // Output:
 //        0 --> The new frontier node has been added successfully.
 //        -1 --> Memory problem when inserting the new frontier node .
-int add_frontier_back(struct tree_node* node){
+int add_frontier_back(struct tree_node* node) {
     // Creating the new frontier node.
     struct frontier_node* new_frontier_node = (struct frontier_node*) malloc(sizeof(struct frontier_node));
     if (new_frontier_node == NULL) {
@@ -195,7 +195,7 @@ int add_frontier_back(struct tree_node* node){
 // Output:
 //        0 --> The new frontier node has been added successfully.
 //        -1 --> Memory problem when inserting the new frontier node .
-int add_frontier_in_order(struct tree_node* node){
+int add_frontier_in_order(struct tree_node* node) {
     // Creating the new frontier node.
     struct frontier_node* new_frontier_node = (struct frontier_node*) malloc(sizeof(struct frontier_node));
     if (new_frontier_node == NULL) {
@@ -211,7 +211,7 @@ int add_frontier_in_order(struct tree_node* node){
         frontier_tail = new_frontier_node;
     }
 
-    if (frontier_head == NULL){
+    if (frontier_head == NULL) {
         frontier_head = new_frontier_node;
         frontier_tail = new_frontier_node;
         return 0;
@@ -257,7 +257,7 @@ int add_frontier_in_order(struct tree_node* node){
 // Output: 
 //        0 --> Successful read.
 //        1 --> Unsuccessful read
-int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]){
+int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]) {
     FILE *fin;
     int i, j;
     char c;
@@ -290,6 +290,7 @@ int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]){
                     puzzle[i][j].suit = 2;
                 } else if (c == 'C') {
                     puzzle[i][j].suit = 3;
+                }
                 fscanf(fin, "%d ", &puzzle[i][j].value);
                 tops[i]++;
             }            
@@ -304,6 +305,7 @@ int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]){
                 puzzle[i][j].suit = 2;
             } else if (c == 'C') {
                 puzzle[i][j].suit = 3;
+            }
             fscanf(fin, "%d ", &puzzle[i][j].value);
             tops[i]++;
         }
@@ -321,7 +323,7 @@ int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]){
 // Outputs:
 //        1 --> The puzzle is a solution puzzle
 //        0 --> The puzzle is NOT a solution puzzle
-int is_solution(struct tree_node* current){
+int is_solution(struct tree_node* current) {
     if ((current->top[12] == (N - 1)) 
         && (current->top[13] == (N - 1)) 
         && (current->top[14] == (N - 1)) 
@@ -716,7 +718,7 @@ struct tree_node* complete_solution(struct tree_node* node, int method) {
 // Output:
 //        NULL --> The problem cannot be solved
 //        struct tree_node*: A pointer to a search-tree leaf node that corresponds to a solution.
-struct tree_node* search(int method){
+struct tree_node* search(int method) {
     clock_t t;
     int i, err;
     struct frontier_node *temp_frontier_node;
@@ -793,7 +795,9 @@ struct tree_node* search(int method){
 //        The sequence of moves that have to be done, starting from the root puzzle, in order
 //        to receive the leaf-node's puzzle, is stored into the global variable solution.
 void extract_solution(struct tree_node* solution_node) {
-    struct tree_node* temp_node = solution_node = solution_node->g;
+    struct tree_node* temp_node = solution_node;
+    solution_length = solution_node->g;
+    
     solution = (int*)malloc(solution_length*sizeof(int));
     sol_moved0 = (struct card*)malloc(solution_length*sizeof(struct card));
     sol_moved1 = (struct card*)malloc(solution_length*sizeof(struct card));
