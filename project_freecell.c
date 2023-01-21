@@ -140,6 +140,11 @@ void display_board(struct card board[16][52], int tops[16]) {
 //        0 --> The new frontier node has been added successfully.
 //        -1 --> Memory problem when inserting the new frontier node.
 int add_frontier_front(struct tree_node* node) {
+    #ifdef DEBUG
+        printf("Adding to the front:\n");
+        display_board(node->board, node->tops);
+    #endif
+
     // Creating the new frontier node.
     struct frontier_node* new_frontier_node = (struct frontier_node*) malloc(sizeof(struct frontier_node));
     if (new_frontier_node == NULL) {
@@ -159,11 +164,6 @@ int add_frontier_front(struct tree_node* node) {
     frontier_head->previous = new_frontier_node;
     frontier_head = new_frontier_node;
 
-    #ifdef DEBUG
-        printf("Added to the front...\n");
-        display_board(node->board, node->tops);
-    #endif
-
     return 0;
 }
 
@@ -175,6 +175,11 @@ int add_frontier_front(struct tree_node* node) {
 //        0 --> The new frontier node has been added successfully.
 //        -1 --> Memory problem when inserting the new frontier node .
 int add_frontier_back(struct tree_node* node) {
+    #ifdef DEBUG
+        printf("Adding to the back...\n");
+        display_board(node->board, node->tops);
+    #endif
+
     // Creating the new frontier node.
     struct frontier_node* new_frontier_node = (struct frontier_node*) malloc(sizeof(struct frontier_node));
     if (new_frontier_node == NULL) {
@@ -194,11 +199,6 @@ int add_frontier_back(struct tree_node* node) {
     frontier_tail->next = new_frontier_node;
     frontier_tail = new_frontier_node;
 
-    #ifdef DEBUG
-        printf("Added to the back...\n");
-        display_board(node->board, node->tops);
-    #endif
-
     return 0;
 }
 
@@ -212,6 +212,11 @@ int add_frontier_back(struct tree_node* node) {
 //        0 --> The new frontier node has been added successfully.
 //        -1 --> Memory problem when inserting the new frontier node .
 int add_frontier_in_order(struct tree_node* node) {
+    #ifdef DEBUG
+        printf("Adding in order (f=%d)...\n", node->f);
+        display_board(node->board, node->tops);
+    #endif
+
     // Creating the new frontier node.
     struct frontier_node* new_frontier_node = (struct frontier_node*) malloc(sizeof(struct frontier_node));
     if (new_frontier_node == NULL) {
@@ -221,11 +226,6 @@ int add_frontier_in_order(struct tree_node* node) {
     new_frontier_node->n = node;
     new_frontier_node->previous = NULL;
     new_frontier_node->next = NULL;
-    
-    if (frontier_head == NULL) {
-        frontier_head = new_frontier_node;
-        frontier_tail = new_frontier_node;
-    }
 
     if (frontier_head == NULL) {
         frontier_head = new_frontier_node;
@@ -237,10 +237,10 @@ int add_frontier_in_order(struct tree_node* node) {
     // Search in the frontier for the first node that corresponds to either a smaller f value
     // or to an equal f value but smaller h value.
     // Note that for the best first search algorithm, f and h values coincide.
-    while (pt != NULL && (pt->n->f>node->f || (pt->n->f == node->f && pt->n->h>node->h))) {
+    while (pt != NULL && (pt->n->f > node->f || (pt->n->f == node->f && pt->n->h > node->h))) {
         pt = pt->next;
     }
-    
+
     if (pt == NULL) {
         // New_frontier_node is inserted at the back of the frontier.
         frontier_tail->next = new_frontier_node;
@@ -262,11 +262,6 @@ int add_frontier_in_order(struct tree_node* node) {
     new_frontier_node->next = pt;
     pt->previous = new_frontier_node;
     frontier_head = new_frontier_node;
-
-    #ifdef DEBUG
-        printf("Added in order (f=%d)...\n", node->f);
-        display_board(node->board, node->tops);
-    #endif
 
     return 0;
 }
@@ -725,24 +720,27 @@ void initialize_search(struct card puzzle[16][52], int tops[16], int method) {
 
 // This function fill the last stack of the board with the remaining cards.
 struct tree_node* complete_solution(struct tree_node* node, int method) {
-    struct tree_node* sol = node;
     for (int i = 0; i < 12; i++) {
+        if (node->tops[i] == -1) {
+            continue;
+        }
+        suit = node->board[i][node->tops[i]].suit;
+        value = node->board[i][node->tops[i]].value;
         if (node->board[i][node->tops[i]].value == 0) {
             create_child(node, foundation, 0, method, i, 0);
-            sol = complete_solution(node->children[0], method);
-            continue;
+            return complete_solution(node->children[0], method);
         }
         for (int j = 12; j < 16; j++) {
             if ((node->board[i][node->tops[i]].suit != node->board[j][node->tops[j]].suit)
                 || (node->board[i][node->tops[i]].value != node->board[j][node->tops[j]].value + 1)) {
                continue; 
-            }            
+            }
             create_child(node, foundation, 0, method, i, j);
-            sol = complete_solution(node->children[0], method);
+            return complete_solution(node->children[0], method);
         }
     }
 
-    return sol;
+    return node;
 }
 
 // This function implements at the higest level the search algorithms.
@@ -756,66 +754,74 @@ struct tree_node* complete_solution(struct tree_node* node, int method) {
 struct tree_node* search(int method) {
     clock_t t;
     int i, err;
-    struct frontier_node *temp_frontier_node;
-    struct tree_node *current_node;
-    struct tree_node *sol_node;
+    struct frontier_node *current_node;
 
     while (frontier_head != NULL) {
         t = clock();
-        if (t - t1>CLOCKS_PER_SEC*TIMEOUT) {
+        if ((t - t1) > (CLOCKS_PER_SEC * TIMEOUT)) {
             printf("Timeout\n");
             return NULL;
         }
 
         // Extract the first node from the frontier.
-        current_node = frontier_head->n;
+        current_node = frontier_head;
 
-        int count = 0;// When 3 of the 4 foundations stacks get filled the algorith stops searching fill the last one.
+        // Check if its a solution
+        int count = 0;
         for (i = 12; i < 16; i++) {
-            if (current_node->board[i][current_node->tops[i]].value == N - 1) {
+            if (current_node->n->tops[i] == -1) {
+                continue;
+            }
+            if (current_node->n->board[i][current_node->n->tops[i]].value == N - 1) {
                 count++;
             }
         }
         if (count == 3) {
-            sol_node = complete_solution(current_node, method);
-            return sol_node;
+            return complete_solution(current_node->n, method);
         }        
 
-        // Find the children of the extracted node.
-        find_children(current_node, method);
+        // Find the children of the frontier node.
+        find_children(current_node->n, method);
         if (mem_error == -1) {
             printf("Memory exhausted while creating new child node. Search is terminated...\n");
             return NULL;
         }
-            
+
         // Add children to frontier.
         for (i = 0; i < 20; i++) {
-            if (current_node->children[i] != NULL) {
+            if (current_node->n->children[i] == NULL) {
                 break;
             }
             if (method == depth) {
-                err = add_frontier_front(current_node->children[i]);
+                err = add_frontier_front(current_node->n->children[i]);
             } else if (method == breadth) {
-                err = add_frontier_back(current_node->children[i]);
+                err = add_frontier_back(current_node->n->children[i]);
             } else {
-                err = add_frontier_in_order(current_node->children[i]);
+                err = add_frontier_in_order(current_node->n->children[i]);
             }
             if (err < 0) {
                 printf("Memory exhausted while creating new frontier node. Search is terminated...\n");
                 return NULL;
             }
         }
-        
-        // Delete the first node of the frontier.
-        temp_frontier_node = frontier_head;
-        frontier_head = frontier_head->next;
-        free(temp_frontier_node);
-        if (frontier_head == NULL) {
-            frontier_tail = NULL;
-            continue;
+
+        // Shift frontier head
+        if (current_node->previous != NULL) {
+            // Current node is no longer frontier head, so we link
+            // its previous with its next node.
+            current_node->previous->next = current_node->next;
+        } else {
+            // Node is still frontier head, so we move to next one.
+            frontier_head = current_node->next;
+            if (frontier_head == NULL) {
+                frontier_tail = NULL;
+            } else {
+                frontier_head->previous = NULL;
+            }
         }
-        
-        frontier_head->previous = NULL;
+
+        // Free node.
+        free(current_node);
     }
 
     return NULL;
@@ -944,7 +950,7 @@ int main(int argc, char** argv) {
         return 0;
     }
     
-    if (solution_length = 0) {
+    if (solution_length == 0) {
         printf("No solution found.\n");
         return 0;
     }
