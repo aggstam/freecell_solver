@@ -47,7 +47,7 @@ struct card {
 
 // Tree's node structure.
 struct tree_node {
-    struct card** board;
+    struct card board[16][52];
     int tops[16];
     int h;                          // The value of the heuristic function for this node.
     int g;                          // The depth of this node .
@@ -105,12 +105,12 @@ int get_method(char* s) {
 
 // Function that displays the board on the screen.
 // Inputs:
-//        struct card** board: Board to display.
+//        struct card board[16][52]: Board to display.
 //          int tops[16]: Board tops array.
-void display_board(struct card** board, int tops[16]) {
+void display_board(struct card board[16][52], int tops[16]) {
     for (int i = 0; i < 16; i++) {
         printf("top: %d\n", tops[i]);
-        for (int j = 0; j < N; j++) {
+        for (int j = 0; j < 52; j++) {
             if (board[i][j].value == -1) {
                 continue;
             }
@@ -273,36 +273,27 @@ int add_frontier_in_order(struct tree_node* node) {
 
 // This function generates a new puzzle board.
 // Inputs:
+//        struct card[16][52] board: The board to initialize.
 //        int[16] tops: Board tops array.
-// Output:
-//      struct card** board --> The board.
-struct card** generate_board(int tops[16]) {
-    struct card** board = (struct card**)malloc(16 * (sizeof(struct card) * N));
-    if (board == NULL) {
-        printf("Error: malloc for board failed.\n");
-        exit(1);
-    }
-
-    struct card* ptr = (struct card*)(board + (sizeof(struct card) * N));
+void generate_board(struct card board[16][52], int tops[16]) {
     for (int i = 0; i < 16; i++) {
-        board[i] = (ptr + (sizeof(struct card) * N) * i);
-        for (int j = 0; j < N; j++) {
+        for (int j = 0; j < 52; j++) {
             board[i][j].suit = -1;
             board[i][j].value = -1;
         }
         tops[i] = -1;
     }
-
-    return board;
 }
 
 // This function reads a file containing a puzzle.
 // Inputs:
 //        char* filename: The name of the file containing a freecell solitaire puzzle.
+//        struct card[16][52] puzzle: The puzzle.
 //        int[16] tops: Board tops array.
 // Output:
-//        struct card** puzzle --> The puzzle.
-struct card** read_puzzle(char* filename, int tops[16]) {
+//        0 --> Successful read.
+//        1 --> Unsuccessful read
+int read_puzzle(char* filename, struct card puzzle[16][52], int tops[16]) {
     FILE *fin;
     int i, j;
     char c;
@@ -311,7 +302,7 @@ struct card** read_puzzle(char* filename, int tops[16]) {
     fin = fopen(filename, "r");
     if (fin == NULL) {
         printf("Cannot open file %s. Program terminates.\n", filename);
-        exit(1);
+        return -1;
     }
 
     // Extracting N value
@@ -319,7 +310,7 @@ struct card** read_puzzle(char* filename, int tops[16]) {
 
     // Initializing the puzzle board.
     printf("Building puzzle with N: %d\n", N);
-    struct card** puzzle = generate_board(tops);
+    generate_board(puzzle, tops);
 
     // If N is odd number, the first 4 stacks of the board will get 1 more
     // card than the other 4, else all stacks have the same number.
@@ -358,7 +349,7 @@ struct card** read_puzzle(char* filename, int tops[16]) {
 
     fclose(fin);
 
-    return puzzle;
+    return 0;
 }
 
 // This function checks whether a board of a node is a solution board.
@@ -691,7 +682,11 @@ void find_children(struct tree_node* current_node, int method) {
 
 // This function initializes the search, i.e. it creates the root node of the search tree
 // and the first node of the frontier.
-void initialize_search(struct card** puzzle, int tops[16], int method) {
+// Inputs:
+//        struct card[16][52] puzzle: The puzzle.
+//        int[16] tops: Board tops array.
+//        int method: Search method to execute.
+void initialize_search(struct card puzzle[16][52], int tops[16], int method) {
     int i, j, jj;
     // Initialize search tree.
     struct tree_node* root = (struct tree_node*) malloc(sizeof(struct tree_node));
@@ -701,7 +696,7 @@ void initialize_search(struct card** puzzle, int tops[16], int method) {
         return;
     }
 
-    root->board = generate_board(root->tops);
+    generate_board(root->board, root->tops);
     root->parent = NULL;
     root->move = -1;
 
@@ -922,6 +917,7 @@ void write_solution_to_file(char* filename, int solution_length, int *solution, 
 int main(int argc, char** argv) {
     int err;
     struct tree_node* solution_node;
+    struct card puzzle[16][52]; // The initial puzzle read from a file.
     int method; // The search algorithm that will be used to solve the puzzle.
     int tops[16];
 
@@ -933,7 +929,7 @@ int main(int argc, char** argv) {
     }
 
     // Parsing puzzle
-    struct card** puzzle = read_puzzle(argv[2], tops);
+    read_puzzle(argv[2], puzzle, tops);
 
     printf("Solving %s using %s...\n", argv[2], argv[1]);
     t1 = clock();
