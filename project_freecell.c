@@ -724,8 +724,6 @@ struct tree_node* complete_solution(struct tree_node* node, int method) {
         if (node->tops[i] == -1) {
             continue;
         }
-        suit = node->board[i][node->tops[i]].suit;
-        value = node->board[i][node->tops[i]].value;
         if (node->board[i][node->tops[i]].value == 0) {
             create_child(node, foundation, 0, method, i, 0);
             return complete_solution(node->children[0], method);
