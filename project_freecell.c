@@ -811,9 +811,7 @@ struct tree_node* search(int method) {
         } else {
             // Node is still frontier head, so we move to next one.
             frontier_head = current_node->next;
-            if (frontier_head == NULL) {
-                frontier_tail = NULL;
-            } else {
+            if (frontier_head != NULL) {
                 frontier_head->previous = NULL;
             }
         }
