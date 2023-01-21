@@ -18,8 +18,8 @@
 #include <time.h>
 #include <string.h>
 
-// Max card number.
-#define N           8
+// Enable DEBUG mode
+//#define DEBUG
 // Constants denoting the four algorithms.
 #define breadth     1
 #define depth       2
@@ -36,6 +36,9 @@
 #define DIAMONDS    2
 #define CLUBS       3
 
+// Max card number, provided by the first line of input file
+int N;
+
 // Cart structure.
 struct card {
     int suit;
@@ -44,8 +47,8 @@ struct card {
 
 // Tree's node structure.
 struct tree_node {
-    struct card board[16][4 * N];
-    int top[16];
+    struct card** board;
+    int tops[16];
     int h;                          // The value of the heuristic function for this node.
     int g;                          // The depth of this node .
     int f;                          // f=0 or f=h or f=h+g, depending on the search algorithm used.
@@ -101,25 +104,28 @@ int get_method(char* s) {
 }
 
 // Function that displays the board on the screen.
-void display_puzzle(struct tree_node* node) {
+// Inputs:
+//        struct card** board: Board to display.
+//          int tops[16]: Board tops array.
+void display_board(struct card** board, int tops[16]) {
     for (int i = 0; i < 16; i++) {
-        printf("top: %d\n", node->top[i]);
-        for (int j = 0; j < N * 4; j++) {
-            if (node->board[i][j].value == -1) {
+        printf("top: %d\n", tops[i]);
+        for (int j = 0; j < N; j++) {
+            if (board[i][j].value == -1) {
                 continue;
             }
             
-            if (node->board[i][j].suit == 0) {
+            if (board[i][j].suit == 0) {
                 printf("H");
-            } else if (node->board[i][j].suit == 1) {
+            } else if (board[i][j].suit == 1) {
                 printf("S");
-            } else if (node->board[i][j].suit == 2) {
+            } else if (board[i][j].suit == 2) {
                 printf("D");
-            } else {
+            } else if (board[i][j].suit == 3) {
                 printf("C");
             }
             
-            printf("%d ", node->board[i][j].value);
+            printf("%d ", board[i][j].value);
         }
         
         printf("\n");
@@ -152,7 +158,12 @@ int add_frontier_front(struct tree_node* node) {
     
     frontier_head->previous = new_frontier_node;
     frontier_head = new_frontier_node;
-    
+
+    #ifdef DEBUG
+        printf("Added to the front...\n");
+        display_board(node->board, node->tops);
+    #endif
+
     return 0;
 }
 
@@ -182,6 +193,11 @@ int add_frontier_back(struct tree_node* node) {
     
     frontier_tail->next = new_frontier_node;
     frontier_tail = new_frontier_node;
+
+    #ifdef DEBUG
+        printf("Added to the back...\n");
+        display_board(node->board, node->tops);
+    #endif
 
     return 0;
 }
@@ -246,18 +262,47 @@ int add_frontier_in_order(struct tree_node* node) {
     new_frontier_node->next = pt;
     pt->previous = new_frontier_node;
     frontier_head = new_frontier_node;
-    
+
+    #ifdef DEBUG
+        printf("Added in order (f=%d)...\n", node->f);
+        display_board(node->board, node->tops);
+    #endif
+
     return 0;
 }
 
-// This function reads a file containing a puzzle and stores the numbers
-// in the global variable int puzzle[16][N*4].
+// This function generates a new puzzle board.
+// Inputs:
+//        int[16] tops: Board tops array.
+// Output:
+//      struct card** board --> The board.
+struct card** generate_board(int tops[16]) {
+    struct card** board = (struct card**)malloc(16 * (sizeof(struct card) * N));
+    if (board == NULL) {
+        printf("Error: malloc for board failed.\n");
+        exit(1);
+    }
+
+    struct card* ptr = (struct card*)(board + (sizeof(struct card) * N));
+    for (int i = 0; i < 16; i++) {
+        board[i] = (ptr + (sizeof(struct card) * N) * i);
+        for (int j = 0; j < N; j++) {
+            board[i][j].suit = -1;
+            board[i][j].value = -1;
+        }
+        tops[i] = -1;
+    }
+
+    return board;
+}
+
+// This function reads a file containing a puzzle.
 // Inputs:
 //        char* filename: The name of the file containing a freecell solitaire puzzle.
-// Output: 
-//        0 --> Successful read.
-//        1 --> Unsuccessful read
-int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]) {
+//        int[16] tops: Board tops array.
+// Output:
+//        struct card** puzzle --> The puzzle.
+struct card** read_puzzle(char* filename, int tops[16]) {
     FILE *fin;
     int i, j;
     char c;
@@ -266,16 +311,15 @@ int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]) {
     fin = fopen(filename, "r");
     if (fin == NULL) {
         printf("Cannot open file %s. Program terminates.\n", filename);
-        return -1;
+        exit(1);
     }
+
+    // Extracting N value
+    fscanf(fin, "%d ", &N);
+
     // Initializing the puzzle board.
-    for (i = 0; i < 16; i++) {
-        for (j = 0; j < N * 4; j++) {
-            puzzle[i][j].suit = -1;
-            puzzle[i][j].value = -1;
-        }
-        tops[i] = -1;
-    }
+    printf("Building puzzle with N: %d\n", N);
+    struct card** puzzle = generate_board(tops);
 
     // If N is odd number, the first 4 stacks of the board will get 1 more
     // card than the other 4, else all stacks have the same number.
@@ -314,7 +358,7 @@ int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]) {
 
     fclose(fin);
 
-    return 0;
+    return puzzle;
 }
 
 // This function checks whether a board of a node is a solution board.
@@ -324,10 +368,10 @@ int read_puzzle(char* filename, struct card puzzle[16][N * 4], int tops[16]) {
 //        1 --> The puzzle is a solution puzzle
 //        0 --> The puzzle is NOT a solution puzzle
 int is_solution(struct tree_node* current) {
-    if ((current->top[12] == (N - 1)) 
-        && (current->top[13] == (N - 1)) 
-        && (current->top[14] == (N - 1)) 
-        && (current->top[15] == (N - 1))) {
+    if ((current->tops[12] == (N - 1))
+        && (current->tops[13] == (N - 1))
+        && (current->tops[14] == (N - 1))
+        && (current->tops[15] == (N - 1))) {
         return 1;
     }
     return 0;
@@ -335,26 +379,26 @@ int is_solution(struct tree_node* current) {
 
 // This function moves a card to the foundation with the same suit.
 void move_to_foundation(struct tree_node* child, int from, int to) {
-    child->top[to]++;
-    child->board[to][child->top[to]].suit = child->board[from][child->top[from]].suit;
-    child->board[to][child->top[to]].value = child->board[from][child->top[from]].value;
-    child->board[from][child->top[from]].suit = -1;
-    child->board[from][child->top[from]].value = -1;
-    child->top[from]--;
+    child->tops[to]++;
+    child->board[to][child->tops[to]].suit = child->board[from][child->tops[from]].suit;
+    child->board[to][child->tops[to]].value = child->board[from][child->tops[from]].value;
+    child->board[from][child->tops[from]].suit = -1;
+    child->board[from][child->tops[from]].value = -1;
+    child->tops[from]--;
 }
 
 // This function moves an ACE to a free foundation.
 void move_to_empty_foundation(struct tree_node* child, int from) {
     for (int i = 12; i < 16; i++) {
-        if (child->top[i] != -1) {
+        if (child->tops[i] != -1) {
             continue;
         }
-        child->top[i]++;
-        child->board[i][child->top[i]].suit = child->board[from][child->top[from]].suit;
-        child->board[i][child->top[i]].value = child->board[from][child->top[from]].value;
-        child->board[from][child->top[from]].suit = -1;
-        child->board[from][child->top[from]].value = -1;
-        child->top[from]--;
+        child->tops[i]++;
+        child->board[i][child->tops[i]].suit = child->board[from][child->tops[from]].suit;
+        child->board[i][child->tops[i]].value = child->board[from][child->tops[from]].value;
+        child->board[from][child->tops[from]].suit = -1;
+        child->board[from][child->tops[from]].value = -1;
+        child->tops[from]--;
         i = 16;
     }
 }
@@ -362,54 +406,54 @@ void move_to_empty_foundation(struct tree_node* child, int from) {
 // This function moves a card to free stack.
 void move_to_new_stack(struct tree_node* child, int from) {
     for (int i = 0; i < 8; i++) {
-        if (child->top[i] != -1) {
+        if (child->tops[i] != -1) {
             continue;
         }
-        child->top[i]++;
-        child->board[i][child->top[i]].suit = child->board[from][child->top[from]].suit;
-        child->board[i][child->top[i]].value = child->board[from][child->top[from]].value;
+        child->tops[i]++;
+        child->board[i][child->tops[i]].suit = child->board[from][child->tops[from]].suit;
+        child->board[i][child->tops[i]].value = child->board[from][child->tops[from]].value;
         i = 9;
     }
-    child->board[from][child->top[from]].suit = -1;
-    child->board[from][child->top[from]].value = -1;
-    child->top[from]--;
+    child->board[from][child->tops[from]].suit = -1;
+    child->board[from][child->tops[from]].value = -1;
+    child->tops[from]--;
 }
 
 // This function moves a card to another stack.
 void move_to_stack(struct tree_node* child, int from, int to) {
-    child->top[to]++;
-    child->board[to][child->top[to]].suit = child->board[from][child->top[from]].suit;
-    child->board[to][child->top[to]].value = child->board[from][child->top[from]].value;
-    child->board[from][child->top[from]].suit = -1;
-    child->board[from][child->top[from]].value = -1;
-    child->top[from]--;
+    child->tops[to]++;
+    child->board[to][child->tops[to]].suit = child->board[from][child->tops[from]].suit;
+    child->board[to][child->tops[to]].value = child->board[from][child->tops[from]].value;
+    child->board[from][child->tops[from]].suit = -1;
+    child->board[from][child->tops[from]].value = -1;
+    child->tops[from]--;
 }
 
 // This function moves a card to a freecell.
 void move_to_a_freecell(struct tree_node* child, int from) {
     int i;
 
-    if (child->top[8] == -1) {
-        child->top[8]++;
-        child->board[8][0].suit = child->board[from][child->top[from]].suit;
-        child->board[8][0].value = child->board[from][child->top[from]].value;
-    } else if (child->top[9] == -1) {
-        child->top[9]++;
-        child->board[9][0].suit = child->board[from][child->top[from]].suit;
-        child->board[9][0].value = child->board[from][child->top[from]].value;
-    } else if (child->top[10] == -1) {
-        child->top[10]++;
-        child->board[10][0].suit = child->board[from][child->top[from]].suit;
-        child->board[10][0].value = child->board[from][child->top[from]].value;
-    } else if (child->top[11] == -1) {
-        child->top[11]++;
-        child->board[11][0].suit = child->board[from][child->top[from]].suit;
-        child->board[11][0].value = child->board[from][child->top[from]].value;
+    if (child->tops[8] == -1) {
+        child->tops[8]++;
+        child->board[8][0].suit = child->board[from][child->tops[from]].suit;
+        child->board[8][0].value = child->board[from][child->tops[from]].value;
+    } else if (child->tops[9] == -1) {
+        child->tops[9]++;
+        child->board[9][0].suit = child->board[from][child->tops[from]].suit;
+        child->board[9][0].value = child->board[from][child->tops[from]].value;
+    } else if (child->tops[10] == -1) {
+        child->tops[10]++;
+        child->board[10][0].suit = child->board[from][child->tops[from]].suit;
+        child->board[10][0].value = child->board[from][child->tops[from]].value;
+    } else if (child->tops[11] == -1) {
+        child->tops[11]++;
+        child->board[11][0].suit = child->board[from][child->tops[from]].suit;
+        child->board[11][0].value = child->board[from][child->tops[from]].value;
     }
 
-    child->board[from][child->top[from]].suit = -1;
-    child->board[from][child->top[from]].value = -1;
-    child->top[from]--;
+    child->board[from][child->tops[from]].suit = -1;
+    child->board[from][child->tops[from]].value = -1;
+    child->tops[from]--;
 }
 
 // This function checks whether two boards are qual.
@@ -450,16 +494,16 @@ int check_with_parents(struct tree_node* new_node) {
 // Computes the sum of the freecells of the board.
 int freecells_count(struct tree_node* node) {
     int score = 0;
-    if (node->top[8] == -1) {
+    if (node->tops[8] == -1) {
         score++;
     }
-    if (node->top[9] == -1) {
+    if (node->tops[9] == -1) {
         score++;
     }
-    if (node->top[10] == -1) {
+    if (node->tops[10] == -1) {
         score++;
     }
-    if (node->top[11] == -1) {
+    if (node->tops[11] == -1) {
         score++;
     }
 
@@ -469,20 +513,20 @@ int freecells_count(struct tree_node* node) {
 // Computes the sum of the cards at foundations of the board.
 int num_cards_at_foundations(struct tree_node* node) {
     int score = 0;
-    if (node->top[12] != -1) {
-        score += node->top[12];
+    if (node->tops[12] != -1) {
+        score += node->tops[12];
         score++;
     }
-    if (node->top[13] != -1) {
-        score += node->top[13];
+    if (node->tops[13] != -1) {
+        score += node->tops[13];
         score++;
     }
-    if (node->top[14] != -1) {
-        score += node->top[14];
+    if (node->tops[14] != -1) {
+        score += node->tops[14];
         score++;
     }
-    if (node->top[15] != -1) {
-        score += node->top[15];
+    if (node->tops[15] != -1) {
+        score += node->tops[15];
         score++;
     }
 
@@ -493,7 +537,7 @@ int num_cards_at_foundations(struct tree_node* node) {
 int freestacks_count(struct tree_node* node) {
     int score = 0;
     for (int i = 0; i < 8; i++) {
-        if (node->board[i][node->top[i]].value == -1) {
+        if (node->board[i][node->tops[i]].value == -1) {
             score++;
         }
     }
@@ -549,11 +593,11 @@ void create_child(struct tree_node* current_node, int move, int p, int method, i
             child_node->board[i][j].suit = current_node->board[i][j].suit;
             child_node->board[i][j].value = current_node->board[i][j].value;
         }
-        child_node->top[i] = current_node->top[i];
+        child_node->tops[i] = current_node->tops[i];
     }
 
     // Change those that are different.
-    child_node->moved0 = current_node->board[from][current_node->top[from]];
+    child_node->moved0 = current_node->board[from][current_node->tops[from]];
 
     if (move == foundation) {
         if (to == 0) {
@@ -564,7 +608,7 @@ void create_child(struct tree_node* current_node, int move, int p, int method, i
     } else if (move == newstack) {
         move_to_new_stack(child_node, from);
     } else if (move == stack) {
-        child_node->moved1 = current_node->board[to][current_node->top[to]];
+        child_node->moved1 = current_node->board[to][current_node->tops[to]];
         move_to_stack(child_node, from, to);
     } else {
         move_to_a_freecell(child_node, from);
@@ -592,19 +636,19 @@ void find_children(struct tree_node* current_node, int method) {
 
     j = 0;
     for (i = 0; i < 12; i++) {
-        if ((current_node->board[i][current_node->top[i]].suit == -1)) {
+        if ((current_node->board[i][current_node->tops[i]].suit == -1)) {
             continue;
         }
         // Check for foundation.
-        if (current_node->board[i][current_node->top[i]].value == 0) {
+        if (current_node->board[i][current_node->tops[i]].value == 0) {
             create_child(current_node, foundation, j, method, i, 0); // Move to an empty foudnation.
             j++;
             continue;
         }
         
         for (jj = 12; jj < 16; jj++) {
-            if ((current_node->board[i][current_node->top[i]].suit != current_node->board[jj][current_node->top[jj]].suit)
-                || (current_node->board[i][current_node->top[i]].value != current_node->board[jj][current_node->top[jj]].value + 1)) {
+            if ((current_node->board[i][current_node->tops[i]].suit != current_node->board[jj][current_node->tops[jj]].suit)
+                || (current_node->board[i][current_node->tops[i]].value != current_node->board[jj][current_node->tops[jj]].value + 1)) {
                 continue;
             }
             create_child(current_node, foundation, j, method, i, jj); // Move to a foundation with cards.
@@ -614,17 +658,17 @@ void find_children(struct tree_node* current_node, int method) {
 
         // Check for another stack.
         for (jj = 0; jj < 8; jj++) {
-            if (current_node->top[jj] == -1) {
+            if (current_node->tops[jj] == -1) {
                 create_child(current_node, newstack, j, method, i, jj);
                 j++;
                 jj = 16;
                 continue;
             }
-            if ((current_node->board[i][current_node->top[i]].value != current_node->board[jj][current_node->top[jj]].value - 1)
-                || (((current_node->board[i][current_node->top[i]].suit != HEARTS) && (current_node->board[i][current_node->top[i]].suit != DIAMONDS)) 
-                    || ((current_node->board[jj][current_node->top[jj]].suit != SPADES) && (current_node->board[jj][current_node->top[jj]].suit != CLUBS)))
-                || (((current_node->board[i][current_node->top[i]].suit != SPADES) && (current_node->board[i][current_node->top[i]].suit != CLUBS)) 
-                    || ((current_node->board[jj][current_node->top[jj]].suit != HEARTS) && (current_node->board[jj][current_node->top[jj]].suit != DIAMONDS)))) {
+            if ((current_node->board[i][current_node->tops[i]].value != current_node->board[jj][current_node->tops[jj]].value - 1)
+                || (((current_node->board[i][current_node->tops[i]].suit != HEARTS) && (current_node->board[i][current_node->tops[i]].suit != DIAMONDS))
+                    || ((current_node->board[jj][current_node->tops[jj]].suit != SPADES) && (current_node->board[jj][current_node->tops[jj]].suit != CLUBS)))
+                || (((current_node->board[i][current_node->tops[i]].suit != SPADES) && (current_node->board[i][current_node->tops[i]].suit != CLUBS))
+                    || ((current_node->board[jj][current_node->tops[jj]].suit != HEARTS) && (current_node->board[jj][current_node->tops[jj]].suit != DIAMONDS)))) {
                 continue;
             }
             create_child(current_node, stack, j, method, i, jj);
@@ -634,7 +678,7 @@ void find_children(struct tree_node* current_node, int method) {
         if (i != 8 && i != 9 && i != 10 && i != 11) {
             // Check for a freecell.
             for (jj = 8; jj < 12; jj++) {
-                if (current_node->top[jj] != -1) {
+                if (current_node->tops[jj] != -1) {
                     continue;
                 }
                 create_child(current_node, freecell, j, method, i, jj);
@@ -647,24 +691,22 @@ void find_children(struct tree_node* current_node, int method) {
 
 // This function initializes the search, i.e. it creates the root node of the search tree
 // and the first node of the frontier.
-void initialize_search(struct card puzzle[16][N * 4], int tops[16], int method) {
-    struct tree_node* root = NULL;    // the root of the search tree.
+void initialize_search(struct card** puzzle, int tops[16], int method) {
     int i, j, jj;
-
     // Initialize search tree.
-    root = (struct tree_node*) malloc(sizeof(struct tree_node));
-    root->parent = NULL;
-    root->move = -1;
-    for (jj = 0; jj<20; jj++) {
-        root->children[jj] = NULL;
+    struct tree_node* root = (struct tree_node*) malloc(sizeof(struct tree_node));
+    if (root == NULL) {
+        printf("Root creation failed.\n");
+        mem_error = -1;
+        return;
     }
 
-    for (i = 0; i < 16; i++) {
-        for (j = 0; j < N * 4; j++) {
-            root->board[i][j].suit = -1;
-            root->board[i][j].value = -1;
-        }
-        root->top[i] = -1;
+    root->board = generate_board(root->tops);
+    root->parent = NULL;
+    root->move = -1;
+
+    for (jj = 0; jj<20; jj++) {
+        root->children[jj] = NULL;
     }
 
     for (i = 0; i < 8; i++) {
@@ -672,7 +714,7 @@ void initialize_search(struct card puzzle[16][N * 4], int tops[16], int method) 
             root->board[i][j].suit = puzzle[i][j].suit;
             root->board[i][j].value = puzzle[i][j].value;
         }
-        root->top[i] = tops[i];
+        root->tops[i] = tops[i];
     }
 
     root->g = 0;
@@ -684,7 +726,12 @@ void initialize_search(struct card puzzle[16][N * 4], int tops[16], int method) 
     } else {
         root->f = 0;
     }
-    
+
+    #ifdef DEBUG
+        printf("Root puzzle:\n");
+        display_board(root->board, root->tops);
+    #endif
+
     add_frontier_front(root);
 }
 
@@ -692,14 +739,14 @@ void initialize_search(struct card puzzle[16][N * 4], int tops[16], int method) 
 struct tree_node* complete_solution(struct tree_node* node, int method) {
     struct tree_node* sol = node;
     for (int i = 0; i < 12; i++) {
-        if (node->board[i][node->top[i]].value == 0) {
+        if (node->board[i][node->tops[i]].value == 0) {
             create_child(node, foundation, 0, method, i, 0);
             sol = complete_solution(node->children[0], method);
             continue;
         }
         for (int j = 12; j < 16; j++) {
-            if ((node->board[i][node->top[i]].suit != node->board[j][node->top[j]].suit)
-                || (node->board[i][node->top[i]].value != node->board[j][node->top[j]].value + 1)) {
+            if ((node->board[i][node->tops[i]].suit != node->board[j][node->tops[j]].suit)
+                || (node->board[i][node->tops[i]].value != node->board[j][node->tops[j]].value + 1)) {
                continue; 
             }            
             create_child(node, foundation, 0, method, i, j);
@@ -737,7 +784,7 @@ struct tree_node* search(int method) {
 
         int count = 0;// When 3 of the 4 foundations stacks get filled the algorith stops searching fill the last one.
         for (i = 12; i < 16; i++) {
-            if (current_node->board[i][current_node->top[i]].value == N - 1) {
+            if (current_node->board[i][current_node->tops[i]].value == N - 1) {
                 count++;
             }
         }
@@ -875,7 +922,6 @@ void write_solution_to_file(char* filename, int solution_length, int *solution, 
 int main(int argc, char** argv) {
     int err;
     struct tree_node* solution_node;
-    struct card puzzle[16][N * 4]; // The initial puzzle read from a file.
     int method; // The search algorithm that will be used to solve the puzzle.
     int tops[16];
 
@@ -886,10 +932,8 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    err = read_puzzle(argv[2], puzzle, tops);
-    if (err < 0) {
-        return -1;
-    }
+    // Parsing puzzle
+    struct card** puzzle = read_puzzle(argv[2], tops);
 
     printf("Solving %s using %s...\n", argv[2], argv[1]);
     t1 = clock();
