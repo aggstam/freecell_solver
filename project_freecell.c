@@ -636,6 +636,9 @@ void find_children(struct tree_node* current_node, int method) {
 
 		// Check for another stack.
 		for (jj = 0; jj < 8; jj++) {
+		    if ((current_node->tops[jj] == -1)) {
+			    continue;
+		    }
 			if (((current_node->board[i][current_node->tops[i]].suit == HEARTS) || (current_node->board[i][current_node->tops[i]].suit == DIAMONDS))
 			    && ((current_node->board[jj][current_node->tops[jj]].suit == SPADES) || (current_node->board[jj][current_node->tops[jj]].suit == CLUBS))) {
 				if (current_node->board[i][current_node->tops[i]].value == current_node->board[jj][current_node->tops[jj]].value - 1) {

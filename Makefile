@@ -1,4 +1,5 @@
 METHOD = depth
+#FILE = test_file_size_2.txt
 FILE = test_file_size_5.txt
 #FILE = test_file_size_8.txt
 OUTPUT = output.txt
