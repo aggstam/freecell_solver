@@ -89,6 +89,8 @@ void syntax_message() {
 }
 
 // Reading run-time parameters.
+// Inputs:
+//      char* s: Method string
 int get_method(char* s) {
     if (strcmp(s, "breadth") == 0) {
         return  breadth;
@@ -105,8 +107,8 @@ int get_method(char* s) {
 
 // Function that displays the board on the screen.
 // Inputs:
-//        struct card board[16][52]: Board to display.
-//          int tops[16]: Board tops array.
+//      struct card board[16][52]: Board to display
+//      int tops[16]: Board tops array
 void display_board(struct card board[16][52], int tops[16]) {
     for (int i = 0; i < 16; i++) {
         printf("top: %d\n", tops[i]);
@@ -135,10 +137,10 @@ void display_board(struct card board[16][52], int tops[16]) {
 // This function adds a pointer to a new leaf search-tree node at the front of the frontier.
 // This function is called by the depth-first search algorithm.
 // Inputs:
-//        struct tree_node* node: A (leaf) search-tree node.
+//      struct tree_node* node: A (leaf) search-tree node
 // Output:
-//        0 --> The new frontier node has been added successfully.
-//        -1 --> Memory problem when inserting the new frontier node.
+//      0 --> The new frontier node has been added successfully
+//     -1 --> Memory problem when inserting the new frontier node
 int add_frontier_front(struct tree_node* node) {
     #ifdef DEBUG
         printf("Adding to the front:\n");
@@ -170,10 +172,10 @@ int add_frontier_front(struct tree_node* node) {
 // This function adds a pointer to a new leaf search-tree node at the back of the frontier.
 // This function is called by the breadth-first search algorithm.
 // Inputs:
-//        struct tree_node* node: A (leaf) search-tree node.
+//      struct tree_node* node: A (leaf) search-tree node
 // Output:
-//        0 --> The new frontier node has been added successfully.
-//        -1 --> Memory problem when inserting the new frontier node .
+//      0 --> The new frontier node has been added successfully
+//     -1 --> Memory problem when inserting the new frontier node 
 int add_frontier_back(struct tree_node* node) {
     #ifdef DEBUG
         printf("Adding to the back...\n");
@@ -207,10 +209,10 @@ int add_frontier_back(struct tree_node* node) {
 // search-tree nodes. The new frontier node is inserted in order.
 // This function is called by the heuristic search algorithm.
 // Inputs:
-//        struct tree_node* node: A (leaf) search-tree node.
+//      struct tree_node* node: A (leaf) search-tree node
 // Output:
-//        0 --> The new frontier node has been added successfully.
-//        -1 --> Memory problem when inserting the new frontier node .
+//      0 --> The new frontier node has been added successfully
+//     -1 --> Memory problem when inserting the new frontier node 
 int add_frontier_in_order(struct tree_node* node) {
     #ifdef DEBUG
         printf("Adding in order (f=%d)...\n", node->f);
@@ -268,8 +270,8 @@ int add_frontier_in_order(struct tree_node* node) {
 
 // This function generates a new puzzle board.
 // Inputs:
-//        struct card[16][52] board: The board to initialize.
-//        int[16] tops: Board tops array.
+//      struct card[16][52] board: The board to initialize
+//      int[16] tops: Board tops array
 void generate_board(struct card board[16][52], int tops[16]) {
     for (int i = 0; i < 16; i++) {
         for (int j = 0; j < 52; j++) {
@@ -282,12 +284,12 @@ void generate_board(struct card board[16][52], int tops[16]) {
 
 // This function reads a file containing a puzzle.
 // Inputs:
-//        char* filename: The name of the file containing a freecell solitaire puzzle.
-//        struct card[16][52] puzzle: The puzzle.
-//        int[16] tops: Board tops array.
+//      char* filename: The name of the file containing a freecell solitaire puzzle
+//      struct card[16][52] puzzle: The puzzle
+//      int[16] tops: Board tops array
 // Output:
-//        0 --> Successful read.
-//        1 --> Unsuccessful read
+//      0 --> Successful read.
+//      1 --> Unsuccessful read
 int read_puzzle(char* filename, struct card puzzle[16][52], int tops[16]) {
     FILE *fin;
     int i, j;
@@ -342,10 +344,10 @@ int read_puzzle(char* filename, struct card puzzle[16][52], int tops[16]) {
 
 // This function checks whether a board of a node is a solution board.
 // Inputs:
-//        struct tree_node* current: A node
+//      struct tree_node* current: A node
 // Outputs:
-//        1 --> The puzzle is a solution puzzle
-//        0 --> The puzzle is NOT a solution puzzle
+//      1 --> The puzzle is a solution puzzle
+//      0 --> The puzzle is NOT a solution puzzle
 int is_solution(struct tree_node* current) {
     if ((current->tops[12] == (N - 1))
         && (current->tops[13] == (N - 1))
@@ -357,6 +359,10 @@ int is_solution(struct tree_node* current) {
 }
 
 // This function moves a card to the foundation with the same suit.
+// Inputs:
+//      struct tree_node* child: A child node
+//      int from: Stack moved from
+//      int to: Stack going to
 void move_to_foundation(struct tree_node* child, int from, int to) {
     child->tops[to]++;
     child->board[to][child->tops[to]].suit = child->board[from][child->tops[from]].suit;
@@ -367,6 +373,9 @@ void move_to_foundation(struct tree_node* child, int from, int to) {
 }
 
 // This function moves an ACE to a free foundation.
+// Inputs:
+//      struct tree_node* child: A child node
+//      int from: Stack moved from
 void move_to_empty_foundation(struct tree_node* child, int from) {
     for (int i = 12; i < 16; i++) {
         if (child->tops[i] != -1) {
@@ -383,6 +392,9 @@ void move_to_empty_foundation(struct tree_node* child, int from) {
 }
 
 // This function moves a card to free stack.
+// Inputs:
+//      struct tree_node* child: A child node
+//      int from: Stack moved from
 void move_to_new_stack(struct tree_node* child, int from) {
     for (int i = 0; i < 8; i++) {
         if (child->tops[i] != -1) {
@@ -399,6 +411,10 @@ void move_to_new_stack(struct tree_node* child, int from) {
 }
 
 // This function moves a card to another stack.
+// Inputs:
+//      struct tree_node* child: A child node
+//      int from: Stack moved from
+//      int to: Stack going to
 void move_to_stack(struct tree_node* child, int from, int to) {
     child->tops[to]++;
     child->board[to][child->tops[to]].suit = child->board[from][child->tops[from]].suit;
@@ -409,6 +425,9 @@ void move_to_stack(struct tree_node* child, int from, int to) {
 }
 
 // This function moves a card to a freecell.
+// Inputs:
+//      struct tree_node* child: A child node
+//      int from: Stack moved from
 void move_to_a_freecell(struct tree_node* child, int from) {
     if (child->tops[8] == -1) {
         child->tops[8]++;
@@ -434,6 +453,12 @@ void move_to_a_freecell(struct tree_node* child, int from) {
 }
 
 // This function checks whether two boards are qual.
+// Inputs:
+//      struct tree_node* n: A tree node (child)
+//      struct tree_node* p: Another tree node (parent)
+// Output:
+//      1 --> Nodes are equal
+//      0 --> Nodes are not equal
 int equal_nodes(struct tree_node* n, struct tree_node* p) {
     for (int i = 0; i < 12; i++) {
         for (int j = 0; j < 52; j++) {
@@ -453,10 +478,10 @@ int equal_nodes(struct tree_node* n, struct tree_node* p) {
 // whether this appears in the path from the root to its parent.
 // This is a moderate way to detect loops in the search.
 // Inputs:
-//        struct tree_node* new_node: A search tree node (usually a new one)
+//      struct tree_node* new_node: A search tree node (usually a new one)
 // Output:
-//        1 --> No coincidence with any predecessor
-//        0 --> Loop detection
+//      1 --> No coincidence with any predecessor
+//      0 --> Loop detection
 int check_with_parents(struct tree_node* new_node) {
     struct tree_node* parent = new_node->parent;
     while (parent != NULL) {
@@ -469,6 +494,11 @@ int check_with_parents(struct tree_node* new_node) {
 }
 
 // Computes the sum of the freecells of the board.
+// This function moves a card to a freecell.
+// Inputs:
+//      struct tree_node* node: A tree node
+// Output:
+//      int --> Node score
 int freecells_count(struct tree_node* node) {
     int score = 0;
     if (node->tops[8] == -1) {
@@ -488,6 +518,10 @@ int freecells_count(struct tree_node* node) {
 }
 
 // Computes the sum of the cards at foundations of the board.
+// Inputs:
+//      struct tree_node* node: A tree node
+// Output:
+//      int --> Node score
 int num_cards_at_foundations(struct tree_node* node) {
     int score = 0;
     if (node->tops[12] != -1) {
@@ -511,6 +545,10 @@ int num_cards_at_foundations(struct tree_node* node) {
 }
 
 // Computes the sum of the freestacks of the board.
+// Inputs:
+//      struct tree_node* node: A tree node
+// Output:
+//      int --> Node score
 int freestacks_count(struct tree_node* node) {
     int score = 0;
     for (int i = 0; i < 8; i++) {
@@ -523,18 +561,25 @@ int freestacks_count(struct tree_node* node) {
 }
 
 // This function returns the score of the current board, based on:
-// -Num of cards at foundations * 10
-// -Freestacks count
-// -Freecells count
+//  - Num of cards at foundations * 10
+//  - Freestacks count
+//  - Freecells count
 // The score is ncaf - fs - fc. This was generated from the idea that the more
 // spread the cards are, the bigger the chance to get a card to foundations. So
 // the board should not have empty freecells or stacks.
+// Inputs:
+//      struct tree_node* node: A tree node
+// Output:
+//      int --> Node score
 int heuristic(struct tree_node* node) {
     return num_cards_at_foundations(node) - freestacks_count(node) - freecells_count(node);
 }
 
 // Evaluates the child node generated by
 // computing the evaluation function value based on the search method used.
+// Inputs:
+//      struct tree_node* child_node: A tree node
+//      int method: Execution algorithm.
 void evaluate_child(struct tree_node* child_node, int method) {
     if (method == best) {
         child_node->f = heuristic(child_node);
@@ -546,6 +591,13 @@ void evaluate_child(struct tree_node* child_node, int method) {
 }
 
 // Create Child Node.
+// Inputs:
+//      struct tree_node* node: Node to create child from
+//      int move: Move to execute
+//      int p: Child index
+//      int method: Execution algorithm.
+//      int from: Stack moved from
+//      int to: Stack going to
 void create_child(struct tree_node* current_node, int move, int p, int method, int from, int to) {
     int i, j;
     struct tree_node* child_node = (struct tree_node*) malloc(sizeof(struct tree_node));
@@ -605,9 +657,8 @@ void create_child(struct tree_node* current_node, int move, int p, int method, i
 
 // This function expands a leaf-node of the search tree.
 // Inputs:
-//        struct tree_node* current_node: A leaf-node of the search tree.
-// Output:
-//        The same leaf-node expanded with pointers to its children (if any).
+//      struct tree_node* current_node: A leaf-node of the search tree.
+//      int method: Execution algorithm.
 void find_children(struct tree_node* current_node, int method) {
     int i, j, jj;
     j = 0;
@@ -674,9 +725,9 @@ void find_children(struct tree_node* current_node, int method) {
 // This function initializes the search, i.e. it creates the root node of the search tree
 // and the first node of the frontier.
 // Inputs:
-//        struct card[16][52] puzzle: The puzzle.
-//        int[16] tops: Board tops array.
-//        int method: Search method to execute.
+//      struct card[16][52] puzzle: The puzzle.
+//      int[16] tops: Board tops array.
+//      int method: Execution algorithm.
 void initialize_search(struct card puzzle[16][52], int tops[16], int method) {
     int i, j, jj;
     // Initialize search tree.
@@ -722,6 +773,11 @@ void initialize_search(struct card puzzle[16][52], int tops[16], int method) {
 }
 
 // This function fill the last stack of the board with the remaining cards.
+// Inputs:
+//      struct tree_node* node: A tree node
+//      int method: Execution algorithm.
+// Output:
+//      struct tree_node* --> Solution node
 struct tree_node* complete_solution(struct tree_node* node, int method) {
     for (int i = 0; i < 12; i++) {
         if (node->tops[i] == -1) {
@@ -748,10 +804,10 @@ struct tree_node* complete_solution(struct tree_node* node, int method) {
 // The various search algorithms differ only in the way the insert
 // new nodes into the frontier, so most of the code is commmon for all algorithms.
 // Inputs:
-//        Nothing, except for the global variables root, frontier_head and frontier_tail.
+//      int method: Execution algorithm.
 // Output:
-//        NULL --> The problem cannot be solved
-//        struct tree_node*: A pointer to a search-tree leaf node that corresponds to a solution.
+//      NULL --> The problem cannot be solved
+//      struct tree_node* --> A pointer to a search-tree leaf node that corresponds to a solution.
 struct tree_node* search(int method) {
     clock_t t;
     int i, err;
@@ -830,10 +886,7 @@ struct tree_node* search(int method) {
 // the moves that have to be done, starting from the root puzzle, in order to
 // go to the leaf node's puzzle.
 // Inputs:
-//        struct tree_node* solution_node: A leaf-node
-// Output:
-//        The sequence of moves that have to be done, starting from the root puzzle, in order
-//        to receive the leaf-node's puzzle, is stored into the global variable solution.
+//      struct tree_node* solution_node: A leaf-node
 void extract_solution(struct tree_node* solution_node) {
     struct tree_node* temp_node = solution_node;
     solution_length = solution_node->g;
@@ -860,9 +913,7 @@ void extract_solution(struct tree_node* solution_node) {
 
 // This function writes the solution into a file
 // Inputs:
-//        char* filename: The name of the file where the solution will be written.
-// Outputs:
-//        Nothing (apart from the new file)
+//      char* filename: The name of the file where the solution will be written.
 void write_solution_to_file(char* filename, int solution_length, int *solution, struct card* m0, struct card* m1) {
     FILE *fout = fopen(filename, "w");
     if (fout == NULL) {
@@ -916,7 +967,7 @@ int main(int argc, char** argv) {
     int err;
     struct tree_node* solution_node;
     struct card puzzle[16][52]; // The initial puzzle read from a file.
-    int method; // The search algorithm that will be used to solve the puzzle.
+    int method;                 // The search algorithm that will be used to solve the puzzle.
     int tops[16];
 
     method = get_method(argv[1]);
@@ -933,8 +984,8 @@ int main(int argc, char** argv) {
     t1 = clock();
 
     initialize_search(puzzle, tops, method);
-    // TODO: fix algo
-    solution_node = search(method); // The main call.
+    // The main call.
+    solution_node = search(method);
 
     t2 = clock();
     
