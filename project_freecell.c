@@ -312,39 +312,32 @@ int read_puzzle(char* filename, struct card puzzle[16][52], int tops[16]) {
     printf("Building puzzle with N: %d\n", N);
     generate_board(puzzle, tops);
 
-    // If N is odd number, the first 4 stacks of the board will get 1 more
-    // card than the other 4, else all stacks have the same number.
-    for (i = 0; i < 8; i++) {
-        if (((N % 2) == 1) && ((i == 0) || (i == 1) || (i == 2) || (i == 3))) {
-            for (j = 0; j < ((N / 2) + 1); j++) {
-                fscanf(fin, "%c", &c);
-                puzzle[i][j].suit = 0;
-                if (c == 'S') {
-                    puzzle[i][j].suit = 1;
-                } else if (c == 'D') {
-                    puzzle[i][j].suit = 2;
-                } else if (c == 'C') {
-                    puzzle[i][j].suit = 3;
-                }
-                fscanf(fin, "%d ", &puzzle[i][j].value);
-                tops[i]++;
-            }            
-            continue;
-        }
-        for (j = 0; j < (N / 2); j++) {
-            fscanf(fin, "%c", &c);
+    // Reading lines
+    char* buffer = NULL;
+    size_t bufsize = 0;
+    size_t characters;
+    i = 0;
+    while ((characters = getline(&buffer, &bufsize, fin)) != -1) {
+        j = 0;
+        for (int jj = 0; jj < (int)characters; jj++) {
+            if ((buffer[jj] == ' ') || buffer[jj] == '\n') {
+                continue;
+            }
+            char suit = buffer[jj];
             puzzle[i][j].suit = 0;
-            if (c == 'S') {
+            if (suit == 'S') {
                 puzzle[i][j].suit = 1;
-            } else if (c == 'D') {
+            } else if (suit == 'D') {
                 puzzle[i][j].suit = 2;
-            } else if (c == 'C') {
+            } else if (suit == 'C') {
                 puzzle[i][j].suit = 3;
             }
-            fscanf(fin, "%d ", &puzzle[i][j].value);
+            jj++;
+            puzzle[i][j].value = buffer[jj] - '0';
+            j++;
             tops[i]++;
         }
-
+        i++;
     }
 
     fclose(fin);
