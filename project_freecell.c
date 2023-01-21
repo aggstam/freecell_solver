@@ -383,7 +383,7 @@ void move_to_empty_foundation(struct tree_node* child, int from) {
         child->board[from][child->tops[from]].suit = -1;
         child->board[from][child->tops[from]].value = -1;
         child->tops[from]--;
-        i = 16;
+        break;
     }
 }
 
@@ -396,7 +396,7 @@ void move_to_new_stack(struct tree_node* child, int from) {
         child->tops[i]++;
         child->board[i][child->tops[i]].suit = child->board[from][child->tops[from]].suit;
         child->board[i][child->tops[i]].value = child->board[from][child->tops[from]].value;
-        i = 9;
+        break;
     }
     child->board[from][child->tops[from]].suit = -1;
     child->board[from][child->tops[from]].value = -1;
@@ -415,8 +415,6 @@ void move_to_stack(struct tree_node* child, int from, int to) {
 
 // This function moves a card to a freecell.
 void move_to_a_freecell(struct tree_node* child, int from) {
-    int i;
-
     if (child->tops[8] == -1) {
         child->tops[8]++;
         child->board[8][0].suit = child->board[from][child->tops[from]].suit;
@@ -443,7 +441,7 @@ void move_to_a_freecell(struct tree_node* child, int from) {
 // This function checks whether two boards are qual.
 int equal_nodes(struct tree_node* n, struct tree_node* p) {
     for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < N * 4; j++) {
+        for (int j = 0; j < 52; j++) {
             if ((n->board[i][j].suit != p->board[i][j].suit) || (n->board[i][j].value != p->board[i][j].value)) {
                 return 0;
             }
@@ -573,7 +571,7 @@ void create_child(struct tree_node* current_node, int move, int p, int method, i
     // Computing the puzzle for the new child.
     // Copy all positions.
     for (i = 0; i < 16; i++) {
-        for (j = 0; j < N * 4; j++) {
+        for (j = 0; j < 52; j++) {
             child_node->board[i][j].suit = current_node->board[i][j].suit;
             child_node->board[i][j].value = current_node->board[i][j].value;
         }
@@ -616,7 +614,8 @@ void create_child(struct tree_node* current_node, int move, int p, int method, i
 // Output:
 //        The same leaf-node expanded with pointers to its children (if any).
 void find_children(struct tree_node* current_node, int method) {
-    int i, j, jj = 0;
+    int i, j, jj;
+    j = 0;
     for (i = 0; i < 12; i++) {
 		if ((current_node->board[i][current_node->tops[i]].suit == -1)) {
 			continue;
