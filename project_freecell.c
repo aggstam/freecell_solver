@@ -616,61 +616,62 @@ void create_child(struct tree_node* current_node, int move, int p, int method, i
 // Output:
 //        The same leaf-node expanded with pointers to its children (if any).
 void find_children(struct tree_node* current_node, int method) {
-    int i, j, jj;
-
-    j = 0;
+    int i, j, jj = 0;
     for (i = 0; i < 12; i++) {
-        if ((current_node->board[i][current_node->tops[i]].suit == -1)) {
-            continue;
-        }
-        // Check for foundation.
-        if (current_node->board[i][current_node->tops[i]].value == 0) {
-            create_child(current_node, foundation, j, method, i, 0); // Move to an empty foudnation.
-            j++;
-            continue;
-        }
-        
-        for (jj = 12; jj < 16; jj++) {
-            if ((current_node->board[i][current_node->tops[i]].suit != current_node->board[jj][current_node->tops[jj]].suit)
-                || (current_node->board[i][current_node->tops[i]].value != current_node->board[jj][current_node->tops[jj]].value + 1)) {
-                continue;
-            }
-            create_child(current_node, foundation, j, method, i, jj); // Move to a foundation with cards.
-            j++;
-            jj = 16;
-        }
+		if ((current_node->board[i][current_node->tops[i]].suit == -1)) {
+			continue;
+		}
+		// Check for foundation.
+		if (current_node->board[i][current_node->tops[i]].value == 0) {
+		    // Move to an empty foudnation.
+			create_child(current_node, foundation, j, method, i, 0);
+			j++;
+			continue;
+		}
 
-        // Check for another stack.
-        for (jj = 0; jj < 8; jj++) {
-            if (current_node->tops[jj] == -1) {
-                create_child(current_node, newstack, j, method, i, jj);
-                j++;
-                jj = 16;
-                continue;
-            }
-            if ((current_node->board[i][current_node->tops[i]].value != current_node->board[jj][current_node->tops[jj]].value - 1)
-                || (((current_node->board[i][current_node->tops[i]].suit != HEARTS) && (current_node->board[i][current_node->tops[i]].suit != DIAMONDS))
-                    || ((current_node->board[jj][current_node->tops[jj]].suit != SPADES) && (current_node->board[jj][current_node->tops[jj]].suit != CLUBS)))
-                || (((current_node->board[i][current_node->tops[i]].suit != SPADES) && (current_node->board[i][current_node->tops[i]].suit != CLUBS))
-                    || ((current_node->board[jj][current_node->tops[jj]].suit != HEARTS) && (current_node->board[jj][current_node->tops[jj]].suit != DIAMONDS)))) {
-                continue;
-            }
-            create_child(current_node, stack, j, method, i, jj);
-            j++;
-        }
+		for (jj = 12; jj < 16; jj++) {
+			if (current_node->board[i][current_node->tops[i]].suit == current_node->board[jj][current_node->tops[jj]].suit) {
+				if (current_node->board[i][current_node->tops[i]].value == current_node->board[jj][current_node->tops[jj]].value + 1) {
+				    // Move to a foundation with cards.
+					create_child(current_node, foundation, j, method, i, jj);
+					j++;
+					break;
+				}
+			}
+		}
 
-        if (i != 8 && i != 9 && i != 10 && i != 11) {
-            // Check for a freecell.
-            for (jj = 8; jj < 12; jj++) {
-                if (current_node->tops[jj] != -1) {
-                    continue;
-                }
-                create_child(current_node, freecell, j, method, i, jj);
-                j++;
-                jj = 12;
-            }
-        }
-    }
+		// Check for another stack.
+		for (jj = 0; jj < 8; jj++) {
+			if (((current_node->board[i][current_node->tops[i]].suit == HEARTS) || (current_node->board[i][current_node->tops[i]].suit == DIAMONDS))
+			    && ((current_node->board[jj][current_node->tops[jj]].suit == SPADES) || (current_node->board[jj][current_node->tops[jj]].suit == CLUBS))) {
+				if (current_node->board[i][current_node->tops[i]].value == current_node->board[jj][current_node->tops[jj]].value - 1) {
+					create_child(current_node, stack, j, method, i, jj);
+					j++;
+				}
+			} else if (((current_node->board[i][current_node->tops[i]].suit == SPADES) || (current_node->board[i][current_node->tops[i]].suit == CLUBS))
+			            && ((current_node->board[jj][current_node->tops[jj]].suit == HEARTS) || (current_node->board[jj][current_node->tops[jj]].suit == DIAMONDS))) {
+				if (current_node->board[i][current_node->tops[i]].value == current_node->board[jj][current_node->tops[jj]].value - 1) {
+					create_child(current_node, stack, j, method, i, jj);
+					j++;
+				}
+			} else if (current_node->tops[jj] == -1) {
+				create_child(current_node, newstack, j, method, i, jj);
+				j++;
+				break;
+			}
+		}
+
+		if (i != 8 && i != 9 && i != 10 && i != 11) {
+			// Check for a freecell.
+			for (jj = 8; jj < 12; jj++) {
+				if (current_node->tops[jj] == -1) {
+					create_child(current_node, freecell, j, method, i, jj);
+					j++;
+					break;
+				}
+			}
+		}
+	}
 }
 
 // This function initializes the search, i.e. it creates the root node of the search tree
