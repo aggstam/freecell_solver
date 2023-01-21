@@ -612,7 +612,7 @@ void find_children(struct tree_node* current_node, int method) {
     int i, j, jj;
     j = 0;
     for (i = 0; i < 12; i++) {
-		if ((current_node->board[i][current_node->tops[i]].suit == -1)) {
+		if ((current_node->tops[i] == -1)) {
 			continue;
 		}
 		// Check for foundation.
