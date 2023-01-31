@@ -6,7 +6,6 @@ This program solves freecell solitaire puzzles using four algorithms:
 - Best first search [3]
 - A* [4]
 
-<br>
 Puzzles are read from an input file, while solution is written to an output file.
 <br>
 Max card number per stack is defined in the first line of the input file.
@@ -17,8 +16,8 @@ Note: Breadth first search will result in OOM for max card number > 4.
 <br>
 This is due to algorithms nature, not implementation.
 
-# Usage
-## Make usage
+## Usage
+### Make usage
 ```
 % make
 ```
@@ -35,7 +34,7 @@ To configure output file name:
 % make OUTPUT={output_file}
 ```
 
-## Direct usage
+##3 Direct usage
 Compilation:
 ```
 % gcc -o project_freecell project_freecell.c
@@ -45,9 +44,7 @@ Execution:
 % ./project_freecell {method} {input_file} {output_file}
 ```
 
-<br>
-References:
-<br>
+## References
 [1] https://en.wikipedia.org/wiki/Depth-first_search
 <br>
 [2] https://en.wikipedia.org/wiki/Breadth-first_search
