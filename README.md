@@ -34,7 +34,7 @@ To configure output file name:
 % make OUTPUT={output_file}
 ```
 
-##3 Direct usage
+### Direct usage
 Compilation:
 ```
 % gcc -o project_freecell project_freecell.c
