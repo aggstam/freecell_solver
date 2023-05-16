@@ -10,3 +10,5 @@ all:
 
 clean:
 	rm -f project_freecell output.txt
+
+.PHONY: all clean

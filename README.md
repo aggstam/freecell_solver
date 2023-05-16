@@ -44,6 +44,17 @@ Execution:
 % ./project_freecell {method} {input_file} {output_file}
 ```
 
+## Execution example
+```
+❯ make
+gcc -o project_freecell project_freecell.c
+./project_freecell depth test_file_size_5.txt output.txt
+Building puzzle with N: 5
+Solving test_file_size_5.txt using depth...
+Solution found! (30 steps)
+Time spent: 0.001146 secs
+```
+
 ## References
 [1] https://en.wikipedia.org/wiki/Depth-first_search
 <br>
